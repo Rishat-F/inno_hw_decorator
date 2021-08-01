@@ -1,5 +1,6 @@
 import random
 from functools import wraps
+from itertools import count
 
 from faker import Faker
 
@@ -12,12 +13,12 @@ class ResultVerificationError(Exception):
     pass
 
 
-def input_validation(input_parameter):
-    return random.choice([True, False])
+def input_validation(*args, **kwargs):
+    return random.choice([True, True])
 
 
 def result_validation(result):
-    return random.choice([True, False])
+    return random.choice([False, False])
 
 
 def decorator(input_validation, result_validation, on_fail_repeat_times=1, default_behavior=None):
@@ -32,15 +33,19 @@ def decorator(input_validation, result_validation, on_fail_repeat_times=1, defau
                     return result
                 else:
                     errors_list.append(ResultVerificationError(f"Результат работы функции {result} невалиден!"))
-                    for _ in range(on_fail_repeat_times):
-                        result = func(*args, **kwargs)
-                        if result_validation(result):
-                            return result
-                        else:
-                            errors_list.append(ResultVerificationError(
-                                f"Результат работы функции {result} невалиден!"))
+                    if on_fail_repeat_times:
+                        for i in count(1):
+                            print(f"Вызов функции после провала валидации результата номер: {i + 1}")
+                            result = func(*args, **kwargs)
+                            if result_validation(result):
+                                return result
+                            else:
+                                errors_list.append(ResultVerificationError(
+                                    f"Результат работы функции {result} невалиден!"))
+                            if i == on_fail_repeat_times:
+                                break
                     if default_behavior:
-                        default_behavior()
+                        return default_behavior()
                     else:
                         raise errors_list[-1]
             else:
@@ -49,11 +54,10 @@ def decorator(input_validation, result_validation, on_fail_repeat_times=1, defau
     return decoration
 
 
-@decorator(input_validation, result_validation, default_behavior=lambda: print("Default behavior"))
-def foo1(input_parameter):
+@decorator(input_validation, result_validation, on_fail_repeat_times=1)
+def foo1(*args, **kwargs):
     """Our function number 1"""
-    result = input_parameter
-    print(result)
+    result = args, kwargs
     return result
 
 
@@ -61,9 +65,8 @@ def foo1(input_parameter):
 def foo2(input_parameter):
     """Our function number 2"""
     result = None
-    print(result)
     return result
 
 
 if __name__ == "__main__":
-    foo1("Привет")
+    print(foo1("Привет", x=2))
