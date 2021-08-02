@@ -1,6 +1,5 @@
 import random
 from functools import wraps
-from itertools import count
 
 from faker import Faker
 
@@ -33,17 +32,16 @@ def decorator(input_validation, result_validation, on_fail_repeat_times=1, defau
                     return result
                 else:
                     errors_list.append(ResultVerificationError(f"Результат работы функции {result} невалиден!"))
-                    if on_fail_repeat_times:
-                        for i in count(1):
-                            print(f"Вызов функции после провала валидации результата номер: {i + 1}")
-                            result = func(*args, **kwargs)
-                            if result_validation(result):
-                                return result
-                            else:
-                                errors_list.append(ResultVerificationError(
-                                    f"Результат работы функции {result} невалиден!"))
-                            if i == on_fail_repeat_times:
-                                break
+                    nonlocal on_fail_repeat_times
+                    while on_fail_repeat_times != 0:
+                        print(f"Вызов функции после провала валидации результата номер: {on_fail_repeat_times}")
+                        result = func(*args, **kwargs)
+                        if result_validation(result):
+                            return result
+                        else:
+                            errors_list.append(ResultVerificationError(
+                                f"Результат работы функции {result} невалиден!"))
+                        on_fail_repeat_times -= 1
                     if default_behavior:
                         return default_behavior()
                     else:
