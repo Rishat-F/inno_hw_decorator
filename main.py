@@ -73,14 +73,11 @@ def decorator(
                     errors_list.append(ResultVerificationError(f"Результат работы функции {result} невалиден!"))
                     nonlocal on_fail_repeat_times
                     while on_fail_repeat_times != 0:
-                        print(f"Вызов функции после провала валидации " f"результата номер: {on_fail_repeat_times}")
                         result = func(*args, **kwargs)
                         if result_validation(result):
                             return result
                         else:
-                            errors_list.append(
-                                ResultVerificationError(f"Результат работы функции {result} " f"невалиден!")
-                            )
+                            errors_list.append(ResultVerificationError(f"Результат работы функции {result} невалиден!"))
                         on_fail_repeat_times -= 1
                     if default_behavior:
                         return default_behavior()
@@ -127,19 +124,22 @@ def validate_locale(argument: dict) -> bool:
         return False
 
 
-def check_symbols(result: str) -> bool:
-    """Check if string including only latin symbols and space."""
-    regex = re.compile(r"^[a-zA-Z ]+$")
-    return bool(regex.match(result))
+def check_fullname(fullname: str) -> bool:
+    """Check if fullname meets the requirement.
+
+    Fullname should be a string including only a-z and A-Z letters and whitespace,
+    also first letter of the each word should be uppercase and all other lowercase.
+    """
+    regex = re.compile(r"^[A-Z][a-z]*( [A-Z][a-z]*)+$")
+    return bool(regex.match(fullname))
 
 
-def default_behavior_for_create_fake_name() -> None:
-    """Function that should be called if result of create_fake_name function is invalid."""
-    print("Function didn't create a name without non english symbols and '-' symbol")
+def default_behavior_for_create_fake_fullname() -> None:
+    """Function that should be called if result of create_fake_fullname function is invalid."""
+    print("Function didn't create a name with only a-z and A-Z letters and whitespace")
 
 
-@decorator(validate_locale, check_symbols, on_fail_repeat_times=0)
-def create_fake_name(argument: dict) -> str:
+def create_fake_fullname(argument: dict) -> str:
     """Create fake name.
 
     Args:
@@ -153,4 +153,10 @@ def create_fake_name(argument: dict) -> str:
 
 
 if __name__ == "__main__":
-    print(create_fake_name({"locale": "it_IT"}))
+    create_fake_fullname = decorator(
+        validate_locale,
+        check_fullname,
+        on_fail_repeat_times=1,
+        default_behavior=default_behavior_for_create_fake_fullname,
+    )(create_fake_fullname)
+    print(create_fake_fullname({"locale": "it_IT"}))
