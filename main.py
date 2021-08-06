@@ -148,7 +148,7 @@ def create_fake_fullname(argument: dict) -> str:
     Returns:
         String with fake name appropriated with locale specified in argument.
     """
-    fake = Faker(argument["locale"])
+    fake = Faker(argument["locale"])  # type: ignore
     return fake.name()
 
 
